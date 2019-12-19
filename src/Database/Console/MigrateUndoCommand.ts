@@ -1,14 +1,11 @@
-import { AbstractConsoleCommand } from '../../Base/Console/AbstractConsoleCommand';
+import { AbstractConsoleCommand } from '@karcass/cli-service';
 import { DbService } from '../Service/DbService';
 
 export class MigrateUndoCommand extends AbstractConsoleCommand {
+    public static meta = { name: 'migrations:migrate:undo', description: 'Undoing last migration' };
 
     public constructor(protected dbService: DbService) {
         super();
-    }
-
-    public static getMeta() {
-        return { name: 'migrations:migrate:undo', description: 'Undoing last migration' };
     }
 
     public async execute() {

@@ -1,15 +1,12 @@
-import { AbstractConsoleCommand } from '../../Base/Console/AbstractConsoleCommand';
+import { AbstractConsoleCommand } from '@karcass/cli-service';
 import { Migration } from 'typeorm/migration/Migration';
 import { DbService } from '../Service/DbService';
 
 export class MigrateCommand extends AbstractConsoleCommand {
+    public static meta = { name: 'migrations:migrate', description: 'Perform migrations' };
 
     public constructor(protected dbService: DbService) {
         super();
-    }
-
-    public static getMeta() {
-        return { name: 'migrations:migrate', description: 'Perform migrations' };
     }
 
     public async execute() {

@@ -1,11 +1,11 @@
-import { AbstractConsoleCommand } from '../../Base/Console/AbstractConsoleCommand';
+import { AbstractConsoleCommand } from '@karcass/cli-service';
 import fs from 'fs';
 
 export class CreateMigrationCommand extends AbstractConsoleCommand {
-
-    public static getMeta() {
-        return { name: 'migrations:generate', description: 'name (Bundle/MigrationName) Creates migration with name from argument' };
-    }
+    public static meta = {
+        name: 'migrations:generate',
+        description: 'name (Bundle/MigrationName) Creates migration with name from argument'
+    };
 
     public async execute() {
         const name = process.argv[3].split('/');

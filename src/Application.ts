@@ -1,16 +1,15 @@
 import Express from 'express';
 import { Container } from '@karcass/container';
-import { AbstractConsoleCommand } from './Base/Console/AbstractConsoleCommand';
 import { DbService } from './Database/Service/DbService';
-import { HelpCommand } from './Base/Console/HelpCommand';
 import { LoggerService } from './Logger/Service/LoggerService';
 import { CreateMigrationCommand } from './Database/Console/CreateMigrationCommand';
 import { MigrateCommand } from './Database/Console/MigrateCommand';
 import { MigrateUndoCommand } from './Database/Console/MigrateUndoCommand';
+import { CliService } from '@karcass/cli-service';
 
 export class Application {
     private services = new Container();
-    private commands = new Container<AbstractConsoleCommand>();
+    private cliService = new CliService()
     public http!: Express.Express;
 
     public constructor(public readonly config: IConfig) { }
@@ -20,18 +19,7 @@ export class Application {
 
         if (process.argv[2]) {
             this.initializeCommands();
-            for (const command of this.commands.getConstructors()) {
-                const getMeta = (command as any).getMeta;
-                if (!getMeta) {
-                    throw new Error(`There is no getMeta static method on ${command}`);
-                }
-                const meta: { name: string } = getMeta.call(command);
-                if (meta.name === process.argv[2]) {
-                    await this.commands.get(command).execute();
-                    process.exit();
-                }
-            }
-            await this.commands.get(HelpCommand).execute();
+            await this.cliService.run();
             process.exit();
         } else {
             this.runWebServer();
@@ -58,10 +46,9 @@ export class Application {
     }
 
     protected initializeCommands() {
-        this.commands.add(HelpCommand, () => new HelpCommand(this.commands.getConstructors()));
-        this.commands.add(CreateMigrationCommand, () => new CreateMigrationCommand());
-        this.commands.add(MigrateCommand, () => new MigrateCommand(this.services.get(DbService)));
-        this.commands.add(MigrateUndoCommand, () => new MigrateUndoCommand(this.services.get(DbService)));
+        this.cliService.add(CreateMigrationCommand, () => new CreateMigrationCommand());
+        this.cliService.add(MigrateCommand, () => new MigrateCommand(this.services.get(DbService)));
+        this.cliService.add(MigrateUndoCommand, () => new MigrateUndoCommand(this.services.get(DbService)));
     }
 
     protected initializeControllers() { /**/ }
