@@ -4,7 +4,6 @@ import { AbstractConsoleCommand } from './Base/Console/AbstractConsoleCommand';
 import { DbService } from './Database/Service/DbService';
 import { HelpCommand } from './Base/Console/HelpCommand';
 import { LoggerService } from './Logger/Service/LoggerService';
-import { TemplateService } from './Template/Service/TemplateService';
 import { CreateMigrationCommand } from './Database/Console/CreateMigrationCommand';
 import { MigrateCommand } from './Database/Console/MigrateCommand';
 import { MigrateUndoCommand } from './Database/Console/MigrateUndoCommand';
@@ -56,7 +55,6 @@ export class Application {
             username: this.config.db.user,
             password: this.config.db.password,
         }));
-        this.services.add(TemplateService, () => new TemplateService());
     }
 
     protected initializeCommands() {
