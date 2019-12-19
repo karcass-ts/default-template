@@ -4,7 +4,7 @@ import fs from 'fs';
 export class CreateMigrationCommand extends AbstractConsoleCommand {
     public static meta = {
         name: 'migrations:generate',
-        description: 'name (Bundle/MigrationName) Creates migration with name from argument'
+        description: 'name (Bundle/MigrationName) Creates migration with name from argument',
     };
 
     public async execute() {
