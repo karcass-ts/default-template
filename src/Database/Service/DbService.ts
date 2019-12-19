@@ -1,26 +1,21 @@
 import fs from 'fs';
-import { Application } from '../../Application';
-import { AbstractService } from '../../Base/Service/AbstractService';
-import { Connection, createConnection } from 'typeorm';
+import { Connection, createConnection, ConnectionOptions } from 'typeorm';
 import path from 'path';
 
-export class DbService extends AbstractService {
+export class DbService {
     public connection!: Connection;
 
-    public constructor(app: Application) {
-        super(app);
-
+    public constructor(protected options: ConnectionOptions) {
         createConnection({
-            type: 'postgres',
-            database: app.config.db.name,
-            username: app.config.db.user,
-            password: app.config.db.password,
+            ...options,
             migrationsTableName: 'migrations',
             entities: ['dist/**/Entity/*.js'],
             logging: ['error', 'warn', 'migration'],
         }).then(async (connection) => {
             this.connection = connection;
-        }).catch((err: any) => console.error(err));
+        }).catch((err: any) => {
+            throw err;
+        });
     }
 
     public onConnect() {

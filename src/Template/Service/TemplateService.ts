@@ -1,12 +1,9 @@
 import { TwingEnvironment, TwingLoaderFilesystem } from 'twing';
-import { AbstractService } from '../../Base/Service/AbstractService';
-import { Application } from '../../Application';
 
-export class TemplateService extends AbstractService {
+export class TemplateService {
     public twig: TwingEnvironment;
 
-    public constructor(app: Application) {
-        super(app);
+    public constructor() {
         this.twig = new TwingEnvironment(new TwingLoaderFilesystem('./src'));
     }
 

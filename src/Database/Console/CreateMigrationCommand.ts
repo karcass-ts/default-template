@@ -1,23 +1,19 @@
 import { AbstractConsoleCommand } from '../../Base/Console/AbstractConsoleCommand';
-import { Application } from '../../Application';
 import fs from 'fs';
 
 export class CreateMigrationCommand extends AbstractConsoleCommand {
 
-    public constructor(app: Application) {
-        super(app,
-            'migrations:generate',
-            'Creates migration with name from argument',
-            'migrations:generate <name>',
-        );
+    public static getMeta() {
+        return { name: 'migrations:generate', description: 'name (Bundle/MigrationName) Creates migration with name from argument' };
     }
 
     public async execute() {
         const name = process.argv[3].split('/');
 
         if (name.length !== 2) {
-            return console.error('You must provide name for new migration with following format: ' +
-                '<BundleName>/<MigrationName>, for example Content/News');
+            console.error('You must provide name for new migration with following format: Bundle/MigrationName, ' +
+                'for example "Content/News"');
+            return;
         }
         const stamp = Date.now();
         const timestamp = Math.round(stamp / 1000);

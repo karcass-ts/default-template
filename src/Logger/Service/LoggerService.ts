@@ -1,13 +1,10 @@
 import fs from 'fs';
-import { Application } from '../../Application';
-import { AbstractService } from '../../Base/Service/AbstractService';
 
-export class LoggerService extends AbstractService {
+export class LoggerService {
     public interval?: NodeJS.Timeout;
     public intervalExecuting = false;
 
-    public constructor(app: Application) {
-        super(app);
+    public constructor(protected logdir: string) {
         this.interval = setInterval(async () => {
             if (this.intervalExecuting) {
                 return;
@@ -46,10 +43,10 @@ export class LoggerService extends AbstractService {
     }
 
     public async getCurrentFilename(log = 'error') {
-        if (!fs.existsSync(this.app.config.logdir)) {
-            fs.mkdirSync(this.app.config.logdir);
+        if (!fs.existsSync(this.logdir)) {
+            fs.mkdirSync(this.logdir);
         }
-        const fileName = `${this.app.config.logdir}/${log}.log`;
+        const fileName = `${this.logdir}/${log}.log`;
         if (!fs.existsSync(fileName)) {
             return fileName;
         }
@@ -58,7 +55,7 @@ export class LoggerService extends AbstractService {
         fs.closeSync(fd);
         const date = new Date();
         if (stat.mtime.getDate() !== date.getDate()) {
-            let moveFileName = `${this.app.config.logdir}/${log}-${stat.mtime.getFullYear()}-` +
+            let moveFileName = `${this.logdir}/${log}-${stat.mtime.getFullYear()}-` +
                 `${String(stat.mtime.getMonth() + 1).padStart(2, '0')}-${String(stat.mtime.getDate()).padStart(2, '0')}.log`;
             moveFileName = fs.existsSync(moveFileName) ? moveFileName + '.' + Date.now() : moveFileName;
             fs.renameSync(fileName, moveFileName);

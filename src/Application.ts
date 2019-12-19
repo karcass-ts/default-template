@@ -1,4 +1,5 @@
 import Express from 'express';
+import { Container } from '@karcass/container';
 import { AbstractConsoleCommand } from './Base/Console/AbstractConsoleCommand';
 import { DbService } from './Database/Service/DbService';
 import { HelpCommand } from './Base/Console/HelpCommand';
@@ -9,36 +10,29 @@ import { MigrateCommand } from './Database/Console/MigrateCommand';
 import { MigrateUndoCommand } from './Database/Console/MigrateUndoCommand';
 
 export class Application {
+    private services = new Container();
+    private commands = new Container<AbstractConsoleCommand>();
     public http!: Express.Express;
-
-    // Services
-    public loggerService!: LoggerService;
-    public dbService!: DbService;
-    public templateService!: TemplateService;
-
-    // Commands
-    public helpCommand!: HelpCommand;
-    public createMigrationCommand!: CreateMigrationCommand;
-    public migrateCommand!: MigrateCommand;
-    public migrateUndoCommand!: MigrateUndoCommand;
-
-    // Controllers
 
     public constructor(public readonly config: IConfig) { }
 
     public async run() {
         this.initializeServices();
+
         if (process.argv[2]) {
             this.initializeCommands();
-            for (const command of Object.values(this)
-                .filter((c: any) => c instanceof AbstractConsoleCommand) as AbstractConsoleCommand[]
-            ) {
-                if (command.name === process.argv[2]) {
-                    await command.execute();
+            for (const command of this.commands.getConstructors()) {
+                const getMeta = (command as any).getMeta;
+                if (!getMeta) {
+                    throw new Error(`There is no getMeta static method on ${command}`);
+                }
+                const meta: { name: string } = getMeta.call(command);
+                if (meta.name === process.argv[2]) {
+                    await this.commands.get(command).execute();
                     process.exit();
                 }
             }
-            await this.helpCommand.execute();
+            await this.commands.get(HelpCommand).execute();
             process.exit();
         } else {
             this.runWebServer();
@@ -55,20 +49,23 @@ export class Application {
     }
 
     protected initializeServices() {
-        this.loggerService = new LoggerService(this);
-        this.dbService = new DbService(this);
-        this.templateService = new TemplateService(this);
+        this.services.add(LoggerService, () => new LoggerService(this.config.logdir));
+        this.services.add(DbService, () => new DbService({
+            type: 'postgres',
+            database: this.config.db.name,
+            username: this.config.db.user,
+            password: this.config.db.password,
+        }));
+        this.services.add(TemplateService, () => new TemplateService());
     }
 
     protected initializeCommands() {
-        this.helpCommand = new HelpCommand(this);
-        this.createMigrationCommand = new CreateMigrationCommand(this);
-        this.migrateCommand = new MigrateCommand(this);
-        this.migrateUndoCommand = new MigrateUndoCommand(this);
+        this.commands.add(HelpCommand, () => new HelpCommand(this.commands.getConstructors()));
+        this.commands.add(CreateMigrationCommand, () => new CreateMigrationCommand());
+        this.commands.add(MigrateCommand, () => new MigrateCommand(this.services.get(DbService)));
+        this.commands.add(MigrateUndoCommand, () => new MigrateUndoCommand(this.services.get(DbService)));
     }
 
-    protected initializeControllers() {
-
-    }
+    protected initializeControllers() { /**/ }
 
 }

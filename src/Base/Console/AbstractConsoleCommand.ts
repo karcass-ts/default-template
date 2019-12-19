@@ -1,5 +1,3 @@
-import { Application } from '../../Application';
-
 export enum ConsoleColors {
     Reset = '\x1b[0m',
     Bright = '\x1b[1m',
@@ -30,9 +28,11 @@ export enum ConsoleColors {
 
 export abstract class AbstractConsoleCommand {
 
-    public constructor(protected app: Application, public name: string, public description: string, public usage?: string) { }
+    public static getMeta(): { name: string, description: string, usage?: string } {
+        throw new Error(`getMeta static method is not implemented in ${this.name}`);
+    }
 
-    public abstract async execute(): Promise<void>;
+    public abstract async execute(): Promise<void>
 
     protected colorize(color: ConsoleColors, text: string) {
         return `${color}${text}${ConsoleColors.Reset}`;
@@ -53,18 +53,18 @@ export abstract class AbstractConsoleCommand {
     }
 
     protected hasKey(key: string) {
-        return !!this.getKeyValue(key)
+        return !!this.getKeyValue(key);
     }
 
     protected getKeyValue(key: string): undefined|string|true {
         for (let k of process.argv.slice(3)) {
-            k = k.trim()
+            k = k.trim();
             if (k.indexOf('--') === 0) {
                 if (k === `--${key}`) {
-                    return true
+                    return true;
                 }
                 if (k.indexOf(`--${key}=`) === 0) {
-                    return k.substr(`--${key}=`.length)
+                    return k.substr(`--${key}=`.length);
                 }
             }
         }

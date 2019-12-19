@@ -1,21 +1,26 @@
 import { AbstractConsoleCommand } from '../../Base/Console/AbstractConsoleCommand';
-import { Application } from '../../Application';
 import { Migration } from 'typeorm/migration/Migration';
+import { DbService } from '../Service/DbService';
 
 export class MigrateCommand extends AbstractConsoleCommand {
 
-    public constructor(app: Application) {
-        super(app, 'migrations:migrate', 'Perform migrations');
+    public constructor(protected dbService: DbService) {
+        super();
+    }
+
+    public static getMeta() {
+        return { name: 'migrations:migrate', description: 'Perform migrations' };
     }
 
     public async execute() {
-        await this.app.dbService.onConnect();
-        await this.app.dbService.collectMigrations();
+        await this.dbService.onConnect();
+        await this.dbService.collectMigrations();
         let migrations: Migration[];
         try {
-            migrations = await this.app.dbService.connection.runMigrations();
+            migrations = await this.dbService.connection.runMigrations();
         } catch (err) {
-            return console.log(err);
+            console.log(err);
+            return;
         }
 
         if (migrations.length) {
