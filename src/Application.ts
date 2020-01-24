@@ -1,56 +1,69 @@
-import Express from 'express';
+import CreateExpress, { Express } from 'express';
+import { TwingEnvironment, TwingLoaderFilesystem } from 'twing';
 import { Container } from '@karcass/container';
-import { DbService } from './Database/Service/DbService';
-import { LoggerService } from './Logger/Service/LoggerService';
-import { CreateMigrationCommand } from './Database/Console/CreateMigrationCommand';
-import { MigrateCommand } from './Database/Console/MigrateCommand';
-import { MigrateUndoCommand } from './Database/Console/MigrateUndoCommand';
-import { CliService } from '@karcass/cli-service';
+import { Cli } from '@karcass/cli';
+import { Connection, createConnection } from 'typeorm';
+import { CreateMigrationCommand, MigrateCommand, MigrateUndoCommand } from '@karcass/migration-commands';
+import { createLogger } from './routines/createLogger';
+import { Logger } from 'winston';
+import { FrontPageController } from './ExampleBundle/Controller/FrontPageController';
+import { Message } from './ExampleBundle/Entity/Message';
+import { MessagesService } from './ExampleBundle/Service/MessagesService';
 
 export class Application {
-    private services = new Container();
-    private cliService = new CliService()
-    public http!: Express.Express;
+    private container = new Container();
+    private console = new Cli();
+    private controllers: object[] = [];
+    private http!: Express;
 
     public constructor(public readonly config: IConfig) { }
 
     public async run() {
-        this.initializeServices();
+        await this.initializeServices();
 
         if (process.argv[2]) {
             this.initializeCommands();
-            await this.cliService.run();
-            process.exit();
+            await this.console.run();
         } else {
             this.runWebServer();
         }
     }
 
     protected runWebServer() {
-        this.http = Express();
-        this.http.use('/public', Express.static('public'));
-        this.http.use(Express.urlencoded());
+        this.http = CreateExpress();
+        this.http.use('/public', CreateExpress.static('public'));
+        this.http.use(CreateExpress.urlencoded());
         this.http.listen(this.config.listen, () => console.log(`Listening on port ${this.config.listen}`));
+
+        this.container.add<Express>('express', () => this.http);
+        this.container.add(TwingEnvironment, () => new TwingEnvironment(new TwingLoaderFilesystem('src')));
 
         this.initializeControllers();
     }
 
-    protected initializeServices() {
-        this.services.add(LoggerService, () => new LoggerService(this.config.logdir));
-        this.services.add(DbService, () => new DbService({
-            type: 'postgres',
-            database: this.config.db.name,
-            username: this.config.db.user,
-            password: this.config.db.password,
+    protected async initializeServices() {
+        await this.container.addInplace<Logger>('logger', () => createLogger());
+        const typeorm = await this.container.addInplace(Connection, () => createConnection({
+            type: 'sqlite',
+            database: 'db/example.sqlite',
+            entities: ['build/**/Entity/*.js'],
+            migrations: ['build/**/Migrations/*.js'],
+            logging: ['error', 'warn', 'migration'],
         }));
+        this.container.add('Repository<Message>', () => typeorm.getRepository(Message));
+        this.container.add(MessagesService);
     }
 
     protected initializeCommands() {
-        this.cliService.add(CreateMigrationCommand, () => new CreateMigrationCommand());
-        this.cliService.add(MigrateCommand, () => new MigrateCommand(this.services.get(DbService)));
-        this.cliService.add(MigrateUndoCommand, () => new MigrateUndoCommand(this.services.get(DbService)));
+        this.console.add(CreateMigrationCommand, () => new CreateMigrationCommand());
+        this.console.add(MigrateCommand, async () => new MigrateCommand(await this.container.get(Connection)));
+        this.console.add(MigrateUndoCommand, async () => new MigrateUndoCommand(await this.container.get(Connection)));
     }
 
-    protected initializeControllers() { /**/ }
+    protected async initializeControllers() {
+        this.controllers.push(
+            this.container.inject(FrontPageController),
+        );
+    }
 
 }

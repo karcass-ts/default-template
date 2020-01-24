@@ -1,0 +1,49 @@
+{% extends 'ExampleBundle/Views/html.twig' %}
+
+{% block styles %}
+    {{ parent() }}
+    <style>
+    .sample-messages {
+        background: rgba(255, 255, 255, .05);
+        height: 300px;
+        border: 1px solid rgba(255, 255, 255, .1);
+        margin-bottom: 15px;
+        padding: 5px 10px;
+        overflow-y: auto;
+    }
+    .sample-message {
+        border-bottom: 1px #000 dotted;
+    }
+    .sample-message-date {
+        font-size: .7rem;
+        margin-bottom: 5px;
+        color: #999;
+    }
+    .sample-message-text {
+        margin: 0 0 10px;
+    }
+    .sample-send-message-form textarea {
+        width: 100%;
+        box-sizing: border-box;
+        resize: none;
+    }
+    </style>
+{% endblock %}
+
+{% block body %}
+<h1>Welcome to karcass example page</h1>
+<p>This page demonstrates very base functional which can be created using karcass.</p>
+
+<div class="sample-messages">
+{% for m in messages %}
+    <div class="sample-message">
+        <p class="sample-message-date">{{ m.timestamp|date("m/d/Y H:i:s") }}</p>
+        <p class="sample-message-text">{{ m.text|nl2br }}</p>
+    </div>
+{% endfor %}
+</div>
+<form class="sample-send-message-form" target="" method="POST">
+<textarea name="text" placeholder="Type message text here"></textarea>
+<button>Send</button>
+</form>
+{% endblock %}
