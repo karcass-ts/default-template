@@ -6,9 +6,9 @@ import { Connection, createConnection } from 'typeorm';
 import { CreateMigrationCommand, MigrateCommand, MigrateUndoCommand } from '@karcass/migration-commands';
 import { createLogger } from './routines/createLogger';
 import { Logger } from 'winston';
-import { FrontPageController } from './ExampleBundle/Controller/FrontPageController';
-import { Message } from './ExampleBundle/Entity/Message';
-import { MessagesService } from './ExampleBundle/Service/MessagesService';
+import { FrontPageController } from './SampleBundle/Controller/FrontPageController';
+import { Message } from './SampleBundle/Entity/Message';
+import { MessagesService } from './SampleBundle/Service/MessagesService';
 
 export class Application {
     private container = new Container();
@@ -42,7 +42,7 @@ export class Application {
     }
 
     protected async initializeServices() {
-        await this.container.addInplace<Logger>('logger', () => createLogger());
+        await this.container.addInplace<Logger>('logger', () => createLogger(this.config.logdir));
         const typeorm = await this.container.addInplace(Connection, () => createConnection({
             type: 'sqlite',
             database: 'db/example.sqlite',

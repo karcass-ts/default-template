@@ -1,12 +1,13 @@
+import path from 'path';
 import { createLogger as cl, format } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 
-export const createLogger = () => {
+export const createLogger = (logdir: string) => {
     const logger = cl({
         level: 'error',
         transports: [
             new DailyRotateFile({
-                filename: 'logs/error-%DATE%.log',
+                filename: path.join(logdir, 'error-%DATE%.log'),
                 datePattern: 'YYYY-MM-DD',
                 maxSize: '100m',
                 maxFiles: '30d',
