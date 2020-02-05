@@ -1,5 +1,12 @@
-import { AbstractTemplateReducer, BasicInstallationConfig, ReplaceFileContentItem, ConfigParametersResult, ConfigParameterType }
-    from '@karcass/template-reducer';
+import { execSync } from 'child_process';
+import {
+    AbstractTemplateReducer,
+    ReplaceFileContentItem,
+    ConfigParametersResult,
+    ConfigParameterType,
+    removeImports,
+    removeCodeBlocks,
+} from '@karcass/template-reducer';
 
 enum Features {
     typeorm = 'typeorm',
@@ -7,31 +14,72 @@ enum Features {
     twing = 'twing',
 }
 
-type InstallationConfig = BasicInstallationConfig & {
+type InstallationConfig = {
+    type: 'default'|'select'
+    tabSize: number
+    semicolon: boolean
+    singleQuotemark: boolean
     features: Features[]
     sample: boolean
     port: number
 }
 
 export class TemplateReducer extends AbstractTemplateReducer {
-    public config: InstallationConfig
+    public config: InstallationConfig = {
+        type: 'default',
+        tabSize: 4,
+        semicolon: true,
+        singleQuotemark: true,
+        features: [Features.logger, Features.twing, Features.typeorm],
+        sample: true,
+        port: Math.round(1000 + Math.random() * 60000),
+    }
 
     public async getConfigParameters(): Promise<ConfigParametersResult> {
         return [
-            { name: 'features', description: 'Select features', type: ConfigParameterType.checkbox, choices: [
-                { value: 'typeorm', description: 'TypeORM for DB (required for sample page)', checked: true },
-                { value: 'logger', description: 'Logger for logs', checked: true },
-                { value: 'twing', description: 'Twing for HTML (required for sample page)', checked: true },
+            { name: 'type', description: 'Select installation type', type: ConfigParameterType.radio, choices: [
+                { value: 'default', description: 'Default', checked: true },
+                { value: 'select', description: 'Configure' },
             ] },
-            async (config: InstallationConfig) => {
-                if (config.features.includes(Features.typeorm) && config.features.includes(Features.twing)) {
-                    return { name: 'sample', description: 'Create sample?', type: ConfigParameterType.confirm, default: true };
-                } else {
-                    return undefined;
-                }
-            },
-            { name: 'port', description: 'Listening port', type: ConfigParameterType.number,
-                default: Math.round(1000 + Math.random() * 60000) },
+            async (config: InstallationConfig) => config.type === 'select' && [
+                { name: 'tabSize', description: 'Tab size', type: ConfigParameterType.number, default: 4 },
+                {
+                    name: 'quotemark',
+                    description: 'Use single quitemark (\') instead double (")?',
+                    type: ConfigParameterType.confirm, default: this.config.singleQuotemark,
+                },
+                {
+                    name: 'semicolon',
+                    description: 'Semicolons at end of the lines?',
+                    type: ConfigParameterType.confirm,
+                    default: this.config.semicolon,
+                },
+                { name: 'features', description: 'Select features', type: ConfigParameterType.checkbox, choices: [
+                    {
+                        value: 'typeorm',
+                        description: 'TypeORM for DB (required for sample page)',
+                        checked: this.config.features.includes(Features.typeorm),
+                    },
+                    {
+                        value: 'logger',
+                        description: 'Logger for logs',
+                        checked: this.config.features.includes(Features.logger),
+                    },
+                    {
+                        value: 'twing',
+                        description: 'Twing for HTML (required for sample page)',
+                        checked: this.config.features.includes(Features.twing),
+                    },
+                ] },
+                async (config: InstallationConfig) => {
+                    if (config.features.includes(Features.typeorm) && config.features.includes(Features.twing)) {
+                        return { name: 'sample', description: 'Create sample?', type: ConfigParameterType.confirm, default: true };
+                    } else {
+                        return undefined;
+                    }
+                },
+                { name: 'port', description: 'Listening port', type: ConfigParameterType.number, default: this.config.port },
+            ],
         ];
     }
 
@@ -68,26 +116,26 @@ export class TemplateReducer extends AbstractTemplateReducer {
         return [
             { filename: 'src/Application.ts', replacer: async (content: string) => {
                 if (!this.config.sample) {
-                    content = this.removeImports(content,
+                    content = removeImports(content,
                         'FrontPageController',
                         'Message',
                         'MessageService',
                     );
-                    content = this.removeCodeBlocks(content,
+                    content = removeCodeBlocks(content,
                         'this.container.add(\'Repository<Message>\'',
                         'this.container.add(MessagesService);',
                         'this.controllers.push(',
                     );
                 }
                 if (!this.config.features.includes(Features.typeorm)) {
-                    content = this.removeImports(content,
+                    content = removeImports(content,
                         'Connection',
                         'createConnection',
                         'CreateMigrationCommand',
                         'MigrateCommand',
                         'MigrateUndoCommand',
                     );
-                    content = this.removeCodeBlocks(content,
+                    content = removeCodeBlocks(content,
                         'await this.container.addInplace(Connection',
                         'this.console.add(CreateMigrationCommand,',
                         'this.console.add(MigrateCommand,',
@@ -95,20 +143,20 @@ export class TemplateReducer extends AbstractTemplateReducer {
                     );
                 }
                 if (!this.config.features.includes(Features.logger)) {
-                    content = this.removeImports(content,
+                    content = removeImports(content,
                         'Logger',
                         'createLogger',
                     );
-                    content = this.removeCodeBlocks(content,
+                    content = removeCodeBlocks(content,
                         'await this.container.addInplace<Logger>',
                     );
                 }
                 if (!this.config.features.includes(Features.logger)) {
-                    content = this.removeImports(content,
+                    content = removeImports(content,
                         'TwingEnvironment',
                         'TwingLoaderFilesystem',
                     );
-                    content = this.removeCodeBlocks(content,
+                    content = removeCodeBlocks(content,
                         'this.container.add(TwingEnvironment',
                     );
                 }
@@ -117,14 +165,33 @@ export class TemplateReducer extends AbstractTemplateReducer {
             { filename: 'config.js.dist', replacer: async (content: string) => {
                 content = content.replace('1000000000', String(this.config.port));
                 if (!this.config.features.includes(Features.logger)) {
-                    content = this.removeCodeBlocks(content, 'logdir:');
+                    content = removeCodeBlocks(content, 'logdir:');
                 }
                 if (!this.config.features.includes(Features.typeorm)) {
-                    content = this.removeCodeBlocks(content, 'db:');
+                    content = removeCodeBlocks(content, 'db:');
                 }
                 return content;
             } },
+            { filename: '.eslintrc.json', replacer: async (content: string) => {
+                const json = JSON.parse(content);
+                json.rules.indent = json.rules['@typescript-eslint/indent'] = ['error', this.config.tabSize, { 'SwitchCase': 1 }];
+                json.rules.semi = ['error', this.config.semicolon ? 'always' : 'never'];
+                json.rules.quotes = ['error', this.config.singleQuotemark ? 'single' : 'double'];
+                return JSON.stringify(json);
+            } },
         ];
+    }
+
+    public async finish() {
+        console.log('Linting code...');
+        execSync('npm run lint', { stdio: 'inherit' });
+        console.log('Building sources...');
+        execSync('npm run build');
+        if (this.config.sample) {
+            console.log('Applying sample db migrations by executing "node index.js migrations:migrate" command...');
+            execSync('node index.js migrations:migrate', { stdio: 'inherit' });
+        }
+        console.log('Installation complete!');
     }
 
 }

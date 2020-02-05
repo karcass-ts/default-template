@@ -6,7 +6,7 @@
   "scripts": {
     "build": "rm -Rf build && tsc -p src",
     "watch": "rm -Rf build && tsc -p src -w",
-    "lint": "eslint -c .eslintrc.json --ext .js,.ts src/"
+    "lint": "eslint -c .eslintrc.json --ext .js,.ts --fix ./src"
   },
   "author": "",
   "license": "ISC",
@@ -14,7 +14,7 @@
     "@karcass/cli": "0.0.3",
     "@karcass/container": "^0.1.3",
     "@karcass/migration-commands": "0.0.2",
-    "@karcass/template-reducer": "0.0.7",
+    "@karcass/template-reducer": "0.0.13",
     "express": "^4.17.1",
     "sqlite3": "^4.1.1",
     "twing": "^2.3.7",

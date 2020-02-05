@@ -62,7 +62,7 @@ export class Application {
 
     protected async initializeControllers() {
         this.controllers.push(
-            this.container.inject(FrontPageController),
+            await this.container.inject(FrontPageController),
         );
     }
 
