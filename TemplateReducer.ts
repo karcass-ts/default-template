@@ -1,4 +1,5 @@
 import { execSync } from 'child_process';
+import fs from 'fs';
 import {
     AbstractTemplateReducer,
     ReplaceFileContentItem,
@@ -183,6 +184,9 @@ export class TemplateReducer extends AbstractTemplateReducer {
     }
 
     public async finish() {
+        if (!fs.existsSync('config.js')) {
+            fs.copyFileSync('config.js.dist', 'config.js');
+        }
         console.log('Linting code...');
         execSync('npm run lint', { stdio: 'inherit' });
         console.log('Building sources...');
