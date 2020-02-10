@@ -24,9 +24,9 @@ export class FrontPageController extends AbstractController {
 
     public async frontPageAction() {
         if (await this.messagesService.isEmpty()) {
-            this.messagesService.createSampleMessages();
+            await this.messagesService.createSampleMessages();
         }
-        return this.twing.render('ExampleBundle/Views/front.twig', {
+        return this.twing.render('SampleBundle/Views/front.twig', {
             messages: await this.messagesService.getMessages(),
         });
     }

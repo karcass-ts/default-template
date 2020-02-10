@@ -45,7 +45,7 @@ export class Application {
         await this.container.addInplace<Logger>('logger', () => createLogger(this.config.logdir));
         const typeorm = await this.container.addInplace(Connection, () => createConnection({
             type: 'sqlite',
-            database: 'db/example.sqlite',
+            database: 'db/sample.sqlite',
             entities: ['build/**/Entity/*.js'],
             migrations: ['build/**/Migrations/*.js'],
             logging: ['error', 'warn', 'migration'],

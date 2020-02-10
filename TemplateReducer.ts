@@ -209,6 +209,9 @@ export class TemplateReducer extends AbstractTemplateReducer<InstallationConfig>
             execSync('node index.js migrations:migrate', { stdio: 'inherit' });
         }
         console.log('> Installation complete!');
+        console.log('> The application installed into ' + this.directoryPath);
+        console.log(`> To start it go to the application directory by executing "cd ${this.directoryName}" ` +
+            'then run it with "node index.js" command.');
     }
 
     public async getTestConfigSet() {

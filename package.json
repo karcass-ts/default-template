@@ -14,7 +14,7 @@
     "@karcass/cli": "0.0.3",
     "@karcass/container": "^0.1.3",
     "@karcass/migration-commands": "0.0.2",
-    "@karcass/template-reducer": "0.0.17",
+    "@karcass/template-reducer": "0.0.21",
     "express": "^4.17.1",
     "sqlite3": "^4.1.1",
     "twing": "^2.3.7",
